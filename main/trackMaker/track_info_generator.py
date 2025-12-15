@@ -80,7 +80,7 @@ def gen_mesh_data(points, width, radius):
         radius (int) : corner radius
 
     Return:
-        points (list, np.array) : point for generate mesh [[l, r], [l, r], ...]
+        points (list, np.array) : point for generate mesh [[l, c, r], [l, c, r], ...]
     """
 
     MAX_WIDTH_RATIO = 0.8
@@ -111,9 +111,9 @@ def gen_mesh_data(points, width, radius):
     right_points = points - offset_vector
     left_points = points + offset_vector
 
-    mesh_points = np.hstack((left_points, right_points))
+    mesh_points = np.hstack((left_points, points, right_points))
 
-    return mesh_points
+    return mesh_points, tangent_norm
 
 def export_obj(mesh_points, filename):
     """
@@ -122,17 +122,18 @@ def export_obj(mesh_points, filename):
         filename (str) : use for decide file name
     """
 
-    if mesh_points.ndim != 2 or mesh_points.shape[1] != 4:
-        raise ValueError("The shape of mesh_points must be (N, 4).")
+    if mesh_points.ndim != 2 or mesh_points.shape[1] != 6:
+        raise ValueError("The shape of mesh_points must be (N, 6).")
     
     #* Verticies data
     left_points = mesh_points[:, :2]
-    right_points = mesh_points[:, 2:]
+    center_points = mesh_points[:, 2:4]
+    right_points = mesh_points[:, 4:]
 
-    joined_verticies = np.vstack((left_points, right_points)) #* (N, 2) -> (2N, 2)
+    joined_verticies = np.vstack((left_points, center_points, right_points)) #* (N, 6) -> (3N, 2)
 
     n = len(mesh_points)
-    z = np.zeros((2*n, 1))
+    z = np.zeros((3*n, 1))
 
     verticies = np.hstack((joined_verticies, z))
 
@@ -142,13 +143,22 @@ def export_obj(mesh_points, filename):
         j = (i + 1) % n
 
         l_i = i + 1
-        r_i = i + n + 1
+        c_i = i + n + 1
+        r_i = i + (2*n) + 1
         l_j = j + 1
-        r_j = j + n + 1
+        c_j = j + n + 1
+        r_j = j + (2*n) + 1
 
-        face = [l_i, r_i, r_j, l_j]
-        faces.append(face)
+        face_ll = [l_j, l_i, c_i]
+        face_lr = [c_i, l_j, c_j]
+        face_rl = [c_j, c_i, r_i]
+        face_rr = [r_i, c_j, r_j]
 
+        faces.append(face_ll)
+        faces.append(face_lr)
+        faces.append(face_rl)
+        faces.append(face_rr)
+        
 
     name_obj = filename + '.obj'
     output_dir = "trackData/"
@@ -171,10 +181,12 @@ def export_obj(mesh_points, filename):
             f.write("o track_mesh\n")
 
             for v in verticies:
-                f.write(f"v {v[0]:.6f} {v[1]:.6f} {v[2]:.6f}\n")
+                f.write(f"v {v[0]:.4f} {v[1]:.4f} {v[2]:.4f}\n")
+
+            
             
             for face in faces:
-                f.write(f"f {face[0]} {face[1]} {face[2]} {face[3]}\n")
+                f.write(f"f {face[0]} {face[1]} {face[2]}\n")
 
         print(f"Completed export : {os.path.abspath(output_path)}")
     

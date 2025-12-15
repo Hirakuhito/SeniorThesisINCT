@@ -9,8 +9,8 @@ import trackMaker.track_info_generator as pg
 def main():
     print("# Welcome")
 
-    points = pg.gen_center_point(100, 50)
-    mesh_points = pg.gen_mesh_data(points, 10, 50)
+    points = pg.gen_center_point(10, 50)
+    mesh_points, tangent_vector = pg.gen_mesh_data(points, 10, 50)
     pg.export_obj(mesh_points, "test_circuit")
 
     
