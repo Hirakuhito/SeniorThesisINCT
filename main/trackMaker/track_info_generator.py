@@ -1,0 +1,151 @@
+"""
+This program is designed exclusively for Oval circuit.
+"""
+import os
+
+import numpy as np
+
+
+def gen_center_point(length, radius, segments=11, pos=np.array([0, 0])):
+    """
+    Args:
+        length (float) : straight length of circuit.
+        radius (float) : corner radius of circuit.
+        segments (int) : Division number of each section. (straight -> corner -> straight)
+        pos (np.array) : center of circuit
+        
+    Return:
+        points (list) : center line points.
+    """
+
+    if length < 0 or radius < 0 or segments < 0:
+        raise ValueError("'length', 'radius' and 'segments' must be positive number.")
+    
+    if not isinstance(segments, int):
+        raise TypeError("Segments must be integer.")
+
+    #*=============== vailables ====================
+    #* All points are stored list.
+    all_points = []
+
+    #* offset
+    corner_offset = length / 2 #* center of cerner section [0, coner_offset]
+
+    #*============== sections ======================
+    #* left straight
+    y_straight = np.linspace(-corner_offset, corner_offset, segments, endpoint=False)
+    x_straight = np.full_like(y_straight, -radius)
+    left_straight = np.stack((x_straight, y_straight), axis=1)
+
+    all_points.append(left_straight)
+
+    #* upper corner
+    angle = np.linspace(np.pi, 0, segments, endpoint=False)
+
+    x_arc_U = radius * np.cos(angle)
+    y_arc_U = radius * np.sin(angle)
+
+    arc_U = np.stack((x_arc_U, y_arc_U + corner_offset), axis=1)
+
+    all_points.append(arc_U)
+
+    #* right straight
+    y_straight = np.linspace(corner_offset, -corner_offset, segments, endpoint=False)
+    x_straight = np.full_like(y_straight, radius)
+    right_straight = np.stack((x_straight, y_straight), axis=1)
+
+    all_points.append(right_straight)
+
+    #* lower corner
+    angle = np.linspace(0, np.pi, segments, endpoint=False)
+
+    x_arc_L = radius * np.cos(angle)
+    y_arc_L = -radius * np.sin(angle)
+
+    arc_L = np.stack((x_arc_L, y_arc_L - corner_offset), axis=1)
+
+    all_points.append(arc_L)
+
+    points = np.concatenate(all_points, axis=0)
+    points += pos
+
+    return points
+
+def gen_mesh_data(points, width, radius):
+    """
+    Args:
+        points (np.array) : center line of corse [x, y]
+        width (int) : load width
+        radius (int) : corner radius
+
+    Return:
+        points (list, np.array) : point for generate mesh [[l, r], [l, r], ...]
+    """
+
+    MAX_WIDTH_RATIO = 0.8
+    width_limit = radius * MAX_WIDTH_RATIO
+
+    if width > width_limit:
+        print(f"Fix : Because 'width = {width}' exceeded the limit ({width_limit}), 'width = {width_limit}' was adjusted")
+
+    #*============= Caluculate vector ===================
+    n = len(points)
+
+    #* Tangent vector
+    tangent_start = points[1] - points[n-1]
+    tangent_end = points[0] - points[n-2]
+    tangent_inner = points[2:] - points[:-2]
+
+    tangent = np.vstack((tangent_start, tangent_inner, tangent_end))
+
+    tangent_norm = np.linalg.norm(tangent, axis=1, keepdims=True)
+    tangent_norm[tangent_norm == 0] = np.finfo(float).eps
+
+    tangent_unit = tangent / tangent_norm
+
+    #* Normal vector
+    normal_unit = np.array([tangent_unit[:, 1], -tangent_unit[:, 0]]).T
+
+    offset_vector = normal_unit * (width / 2)
+    right_points = points - offset_vector
+    left_points = points + offset_vector
+
+    mesh_points = np.hstack((left_points, right_points))
+
+    return mesh_points
+
+def export_obj(mesh_points, filename):
+    """
+    Args:
+        mesh_points (list, np.ndarray) : use for mesh data
+        filename (str) : use for decide file name
+    """
+
+    if mesh_points.ndim != 2 or mesh_points.shape[1] != 4:
+        raise ValueError("The shape of mesh_points must be (N, 4).")
+    
+    #* Verticies data
+    left_points = mesh_points[:, :2]
+    right_points = mesh_points[:, 2:]
+
+    joined_verticies = np.vstack((left_points, right_points)) #* (N, 2) -> (2N, 2)
+
+    n = len(mesh_points)
+    z = np.zeros((2*n, 1))
+
+    verticies = np.hstack((joined_verticies, z))
+
+    #* Faces data
+    faces = []
+    for i in range(n):
+        j = (i + 1) % n
+
+        l_i = i + 1
+        r_i = i + n + 1
+        l_j = j + 1
+        r_j = j + n + 1
+
+        face = [l_i, r_i, r_j, l_j]
+        faces.appen(face)
+
+    #! You should write code
