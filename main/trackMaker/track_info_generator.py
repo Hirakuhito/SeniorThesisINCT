@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 
-def gen_center_point(length, radius, segments=11, pos=np.array([0, 0])):
+def gen_center_point(length, radius, segments=51, pos=np.array([0, 0])):
     """
     Args:
         length (float) : straight length of circuit.
@@ -149,9 +149,9 @@ def export_obj(mesh_points, filename):
         c_j = j + n + 1
         r_j = j + (2*n) + 1
 
-        face_ll = [l_j, l_i, c_i]
+        face_ll = [l_i, l_j, c_i]
         face_lr = [c_i, l_j, c_j]
-        face_rl = [c_j, c_i, r_i]
+        face_rl = [c_i, c_j, r_i]
         face_rr = [r_i, c_j, r_j]
 
         faces.append(face_ll)
@@ -182,11 +182,9 @@ def export_obj(mesh_points, filename):
 
             for v in verticies:
                 f.write(f"v {v[0]:.4f} {v[1]:.4f} {v[2]:.4f}\n")
-
-            
             
             for face in faces:
-                f.write(f"f {face[0]} {face[1]} {face[2]}\n")
+                f.write(f"f {face[0]}//1 {face[1]}//1 {face[2]}//1\n")
 
         print(f"Completed export : {os.path.abspath(output_path)}")
     
