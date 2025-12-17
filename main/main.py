@@ -10,6 +10,9 @@ def main():
     print("# Welcome")
 
     #*================= export circuit ==================
+    circuit_name = "circuit"
+    runoff_name = "runoff"
+
     straight = 0
     radius = 40
     width = 15
@@ -17,10 +20,10 @@ def main():
     points = pg.gen_center_point(straight, radius)
 
     circuit_mesh_points, cricuite_tangent_vector = pg.gen_mesh_data(points, width, radius, in_out="in")
-    pg.export_obj(circuit_mesh_points, "test_circuit", in_out="in")
+    pg.export_obj(circuit_mesh_points, circuit_name, in_out="in")
     
     runoff_mesh_points, cricuite_tangent_vector = pg.gen_mesh_data(points, width, radius, in_out="out")
-    pg.export_obj(runoff_mesh_points, "test_runoff", in_out="out")
+    pg.export_obj(runoff_mesh_points, runoff_name, in_out="out")
 
     #*=========== PuBullet basic settings ===============
     engine = p.connect(p.GUI)
@@ -30,8 +33,8 @@ def main():
 
     #*===================== load models ===================
     #* load circuit
-    circuit_file_path = "trackData/test_circuit.obj"
-    runoff_file_path = "trackData/test_runoff.obj"
+    circuit_file_path = "trackData/" + circuit_name + ".obj"
+    runoff_file_path = "trackData/" + runoff_name + ".obj"
 
     base_pos = [0, 0, 0]
     base_orient = p.getQuaternionFromEuler([0, 0, 0])
