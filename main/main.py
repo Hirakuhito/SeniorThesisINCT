@@ -13,10 +13,16 @@ def main():
     straight = 60
     radius = 30
     width = 15
-    points = pg.gen_center_point(straight, radius)
-    mesh_points, tangent_vector = pg.gen_mesh_data(points, width, radius)
-    pg.export_obj(mesh_points, "test_circuit")
 
+    points = pg.gen_center_point(straight, radius)
+
+    circuit_mesh_points, cricuite_tangent_vector = pg.gen_mesh_data(points, width, radius, in_out="in")
+    pg.export_obj(circuit_mesh_points, "test_circuit", in_out="in")
+    
+    runoff_mesh_points, cricuite_tangent_vector = pg.gen_mesh_data(points, width, radius, in_out="out")
+    pg.export_obj(runoff_mesh_points, "test_runoff", in_out="out")
+
+    #*=========== PuBullet basic settings ===============
     engine = p.connect(p.GUI)
     p.setAdditionalSearchPath(pd.getDataPath())
     p.resetSimulation()
@@ -25,6 +31,10 @@ def main():
     #*===================== load models ===================
     #* load circuit
     circuit_file_path = "trackData/test_circuit.obj"
+    runoff_file_path = "trackData/test_runoff.obj"
+
+    base_pos = [0, 0, 0]
+    base_orient = p.getQuaternionFromEuler([0, 0, 0])
 
     circuit_vis_id = p.createVisualShape(
         shapeType=p.GEOM_MESH,
@@ -38,9 +48,6 @@ def main():
         fileName=circuit_file_path,
         meshScale=[1.0, 1.0, 1.0]
     )
-
-    base_pos = [0, 0, 1e-3]
-    base_orient = p.getQuaternionFromEuler([0, 0, 0])
     
     circuit_id = p.createMultiBody(
         baseMass=0,
@@ -49,6 +56,30 @@ def main():
         basePosition=base_pos,
         baseOrientation=base_orient
     )
+
+    runoff_vis_id = p.createVisualShape(
+        shapeType=p.GEOM_MESH,
+        fileName=runoff_file_path,
+        meshScale=[1.0, 1.0, 1.0],
+        rgbaColor=[0.0, 0.8, 0.0, 1]
+    )
+
+    runoff_coll_id = p.createCollisionShape(
+        shapeType=p.GEOM_MESH,
+        fileName=runoff_file_path,
+        meshScale=[1.0, 1.0, 1.0]
+    )
+
+    runoff_id = p.createMultiBody(
+        baseMass=0,
+        baseCollisionShapeIndex=runoff_coll_id,
+        baseVisualShapeIndex=runoff_vis_id,
+        basePosition=base_pos,
+        baseOrientation=base_orient
+    )
+
+    #todo ランオフをマット緑にしたい
+    # p.changeVisualShape(runoff_id, 0, specularColor=[0, 0, 0])
 
     #* load car
     car_path = "./formular/formular_car/car.urdf"
@@ -59,7 +90,6 @@ def main():
 
     #* load plane
     wheel_index = [1, 3, 5, 7]
-    plane_id = p.loadURDF("plane.urdf")
     for _, wheel in enumerate(wheel_index):
         p.changeVisualShape(car_id, wheel, specularColor=[0, 0, 0])
         p.changeDynamics(car_id, wheel, lateralFriction=1.0, rollingFriction=0.1)
