@@ -10,8 +10,8 @@ def main():
     print("# Welcome")
 
     #*================= export circuit ==================
-    straight = 60
-    radius = 30
+    straight = 0
+    radius = 40
     width = 15
 
     points = pg.gen_center_point(straight, radius)
@@ -40,7 +40,8 @@ def main():
         shapeType=p.GEOM_MESH,
         fileName=circuit_file_path,
         meshScale=[1.0, 1.0, 1.0],
-        rgbaColor=[0.5, 0.5, 0.5, 1]
+        rgbaColor=[0.5, 0.5, 0.5, 1],
+        specularColor=[0, 0, 0]
     )
 
     circuit_coll_id = p.createCollisionShape(
@@ -61,7 +62,8 @@ def main():
         shapeType=p.GEOM_MESH,
         fileName=runoff_file_path,
         meshScale=[1.0, 1.0, 1.0],
-        rgbaColor=[0.0, 0.8, 0.0, 1]
+        rgbaColor=[0.2, 0.45, 0.2, 1],
+        specularColor=[0, 0, 0]
     )
 
     runoff_coll_id = p.createCollisionShape(
@@ -78,8 +80,6 @@ def main():
         baseOrientation=base_orient
     )
 
-    #todo ランオフをマット緑にしたい
-    # p.changeVisualShape(runoff_id, 0, specularColor=[0, 0, 0])
 
     #* load car
     car_path = "./formular/formular_car/car.urdf"
