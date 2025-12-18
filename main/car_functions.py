@@ -43,32 +43,55 @@ def isContact(car_id, track_id, runoff_id, wheel_link_id):
 
 
 def checkHit(car_id, show=False, dict=None):
-    ray_origin_local = [1.2, 0.0, 0.3]
-    ray_length = 10
-
-    ray_dir_local = [1, 0, -0.5]
+    ray_origin_local = [0.0, 0.5, 0.0]
+    # ray_dir_local = [0, 1, -0.1]
+    ray_length = 1.5
+    ray_num = 11
+    fov = np.deg2rad(120)
 
     pos, orn = p.getBasePositionAndOrientation(car_id)
-    rot_mat = p.getMatrixFromQuaternion(orn)
-    rot_mat = np.array(rot_mat).reshape(3, 3)
-    
-    origin_world = pos + rot_mat @ np.array(ray_origin_local)
-    dir_world = rot_mat @ np.array(ray_dir_local)
-    end_world = origin_world + dir_world * ray_length
+    yaw = p.getEulerFromQuaternion(orn)[2]
 
-    hit_result = p.rayTest(origin_world.tolist(), end_world.tolist())[0]
+    cy, sy = np.cos(yaw), np.sin(yaw)
+    rot_z = np.array([
+        [cy, -sy, 0],
+        [sy,  cy, 0],
+        [ 0,   0, 1]
+    ])
 
-    isHit = hit_result[0] != -1
-    hit_id = hit_result[0]
-    hit_frac = hit_result[2]
-    distance = hit_frac * ray_length
+    origin_world = pos + rot_z @ np.array(ray_origin_local)
 
-    hit_info = [isHit, hit_id, distance]
+    angles = np.linspace(-fov/2, fov/2, ray_num)
+
+    hit_info = []
+    for a in angles:
+        ca, sa = np.cos(a), np.sin(a)
+        dir_local = np.array([sa, ca, -0.08])
+
+        dir_world    = rot_z @ np.array(dir_local)
+        end_world    = origin_world + dir_world * ray_length
+
+        p.addUserDebugLine(origin_world, end_world, [1,0,0], 1, 0.1)
+        results = p.rayTest(origin_world.tolist(), end_world.tolist())[0]
+
+
+        isHit = results[0] != -1
+        hit_id = results[0]
+
+        hit_info.append([isHit, hit_id])
 
     match show:
         case True:
             #* check dict -> search name from id -> print
-            pass
+            if dict == None:
+                raise ValueError("If you wanna show the information, you should attach dictionary.")
+
+            match isHit:
+                case True:
+                    print(f"# Hit to {dict.get(hit_id)}".ljust(30), end="\r")
+
+                case False:
+                    print(f"# Not hit to anything.".ljust(30), end="\r")
 
         case False:
             pass

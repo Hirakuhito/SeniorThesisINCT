@@ -99,7 +99,7 @@ def main(engine_mode):
 
     #* load car
     car_path = "./formular/formular_car/car.urdf"
-    car_base_pos = [radius, 0, 0.5]
+    car_base_pos = [radius, 0, 0.2]
     car_base_orient = p.getQuaternionFromEuler([0, 0, 0])
 
     car_id = p.loadURDF(car_path, basePosition=car_base_pos, baseOrientation=car_base_orient, globalScaling=0.2)
@@ -119,8 +119,8 @@ def main(engine_mode):
         while p.isConnected():
             p.stepSimulation()
             # print(cf.isContact(car_id, track_id, runoff_id, wheel_index))
-            hit_info = cf.checkHit(car_id)
-            print(f"Hit Info : Is Hit -> {hit_info[0]}, Hit to {hit_info[1]}, Distance {hit_info[2]}")
+            hit_info = cf.checkHit(car_id, show=True, dict=id_to_name)
+            # print(f"Hit Info : Is Hit -> {hit_info[0]}, Hit to {hit_info[1]}, Distance {hit_info[2]}")
             time.sleep(1./240.)
 
     except Exception as e:
