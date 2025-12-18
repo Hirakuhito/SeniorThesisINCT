@@ -4,6 +4,8 @@ import time
 import numpy as np
 import pybullet as p
 import pybullet_data as pd
+
+import car_functions as cf
 import trackMaker.track_info_generator as pg
 
 
@@ -55,6 +57,7 @@ def main(engine_mode):
     circuit_coll_id = p.createCollisionShape(
         shapeType=p.GEOM_MESH,
         fileName=circuit_file_path,
+        flags=p.GEOM_FORCE_CONCAVE_TRIMESH,
         meshScale=[1.0, 1.0, 1.0]
     )
     
@@ -77,6 +80,7 @@ def main(engine_mode):
     runoff_coll_id = p.createCollisionShape(
         shapeType=p.GEOM_MESH,
         fileName=runoff_file_path,
+        flags=p.GEOM_FORCE_CONCAVE_TRIMESH,
         meshScale=[1.0, 1.0, 1.0]
     )
 
@@ -107,10 +111,11 @@ def main(engine_mode):
     try:
         while p.isConnected():
             p.stepSimulation()
+            print(cf.isContact(car_id, circuit_id, runoff_id, wheel_index))
             time.sleep(1./240.)
 
-    except Exception:
-        pass
+    except Exception as e:
+        print(e)
 
     # シミュレーションの終了
     p.disconnect()
