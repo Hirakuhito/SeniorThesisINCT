@@ -14,9 +14,9 @@ def main(engine_mode):
     circuit_name = "circuit"
     runoff_name = "runoff"
 
-    straight = 0
-    radius = 10
-    width = 15
+    straight = 7
+    radius = 3
+    width = 2
 
     points = pg.gen_center_point(straight, radius)
 
@@ -94,7 +94,7 @@ def main(engine_mode):
     car_base_pos = [radius, 0, 0.5]
     car_base_orient = p.getQuaternionFromEuler([0, 0, 0])
 
-    car_id = p.loadURDF(car_path, basePosition=car_base_pos, baseOrientation=car_base_orient)
+    car_id = p.loadURDF(car_path, basePosition=car_base_pos, baseOrientation=car_base_orient, globalScaling=0.2)
 
     #* load plane
     wheel_index = [1, 3, 5, 7]
