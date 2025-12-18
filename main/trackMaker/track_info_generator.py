@@ -85,6 +85,8 @@ def gen_mesh_data(points, width, radius, in_out):
         points (list, np.array) : point for generate mesh [[l, c, r], [l, c, r], ...]
     """
 
+    load_width = width
+
     MAX_WIDTH_RATIO = 0.8
     width_limit = radius * MAX_WIDTH_RATIO
 
@@ -92,8 +94,8 @@ def gen_mesh_data(points, width, radius, in_out):
         raise ValueError("in_out must be 'in' or 'out'.")
 
     if width > width_limit:
+        load_width = width_limit
         print(f"Fix : Because 'width = {width}' exceeded the limit ({width_limit}), 'width = {width_limit}' was adjusted")
-
     #*============= Caluculate vector ===================
     n = len(points)
 
@@ -119,16 +121,13 @@ def gen_mesh_data(points, width, radius, in_out):
         left_points = points + offset_vector
         mesh_points = np.hstack((left_points, points, right_points))
     else:
-        runoff_offset = normal_unit * (radius + width/2) * 0.65
+        runoff_offset = normal_unit * (radius + load_width/2) * 0.65
 
         in_right_points = points + offset_vector
         in_left_points = points + runoff_offset
         out_right_points = points - runoff_offset
         out_left_points = points - offset_vector
         
-
-        # mesh_points = np.hstack((in_left_points, in_right_points))
-        # mesh_points = np.hstack((out_left_points, out_right_points))
         mesh_points = np.hstack((in_left_points, in_right_points, out_left_points, out_right_points))
 
     return mesh_points, tangent_norm
@@ -151,87 +150,89 @@ def export_obj(mesh_points, filename, in_out):
         if mesh_points.ndim != 2 or mesh_points.shape[1] != 8:
             raise ValueError("The shape of mesh_points must be (N, 8).")
     
-    if in_out == 'in':
-        left_points = mesh_points[:, :2]
-        center_points = mesh_points[:, 2:4]
-        right_points = mesh_points[:, 4:]
+    match in_out:
+        case "in":
+            left_points = mesh_points[:, :2]
+            center_points = mesh_points[:, 2:4]
+            right_points = mesh_points[:, 4:]
 
-        joined_verticies = np.vstack((left_points, center_points, right_points)) #* (N, 6) -> (3N, 2)
+            joined_verticies = np.vstack((left_points, center_points, right_points)) #* (N, 6) -> (3N, 2)
 
-        n = len(mesh_points)
-        z = np.zeros((3*n, 1))
+            n = len(mesh_points)
+            z = np.zeros((3*n, 1))
 
-        verticies = np.hstack((joined_verticies, z))
+            verticies = np.hstack((joined_verticies, z))
 
-        #* Faces data
-        faces = []
-        for i in range(n):
-            j = (i + 1) % n
+            #* Faces data
+            faces = []
+            for i in range(n):
+                j = (i + 1) % n
 
-            l_i = i + 1
-            c_i = i + n + 1
-            r_i = i + (2*n) + 1
-            l_j = j + 1
-            c_j = j + n + 1
-            r_j = j + (2*n) + 1
+                l_i = i + 1
+                c_i = i + n + 1
+                r_i = i + (2*n) + 1
+                l_j = j + 1
+                c_j = j + n + 1
+                r_j = j + (2*n) + 1
 
-            face_ll = [l_i, l_j, c_i]
-            face_lr = [c_i, l_j, c_j]
-            face_rl = [c_i, c_j, r_i]
-            face_rr = [r_i, c_j, r_j]
+                face_ll = [l_i, l_j, c_i]
+                face_lr = [c_i, l_j, c_j]
+                face_rl = [c_i, c_j, r_i]
+                face_rr = [r_i, c_j, r_j]
 
-            faces.append(face_ll)
-            faces.append(face_lr)
-            faces.append(face_rl)
-            faces.append(face_rr)
-    else:
-        in_left_points = mesh_points[:, :2]
-        in_right_points = mesh_points[:, 2:4]
-        out_left_points = mesh_points[:, 4:6]
-        out_right_points = mesh_points[:, 6:]
+                faces.append(face_ll)
+                faces.append(face_lr)
+                faces.append(face_rl)
+                faces.append(face_rr)
 
-        # joined_verticies = np.vstack((in_left_points, in_right_points)) #* (N, 8) -> (4N, 2)
-        in_verticies = np.vstack((in_left_points, in_right_points))
-        out_verticies = np.vstack((out_left_points, out_right_points))
-        joined_verticies = np.vstack((in_verticies, out_verticies))
+        case "out":
+            in_left_points = mesh_points[:, :2]
+            in_right_points = mesh_points[:, 2:4]
+            out_left_points = mesh_points[:, 4:6]
+            out_right_points = mesh_points[:, 6:]
 
-        n = len(mesh_points)
-        z = np.zeros((4*n, 1))
+            # joined_verticies = np.vstack((in_left_points, in_right_points)) #* (N, 8) -> (4N, 2)
+            in_verticies = np.vstack((in_left_points, in_right_points))
+            out_verticies = np.vstack((out_left_points, out_right_points))
+            joined_verticies = np.vstack((in_verticies, out_verticies))
 
-
-
-        verticies = np.hstack((joined_verticies, z))
-
-        #* Faces data
-        faces = []
-        for i in range(n):
-            j = (i + 1) % n
-
-            l_i = i + 1
-            r_i = i + n + 1
-            l_j = j + 1
-            r_j = j + n + 1
-
-            face_in = [l_i, l_j, r_i]
-            face_out = [r_i, l_j, r_j]
-
-            faces.append(face_in)
-            faces.append(face_out)
+            n = len(mesh_points)
+            z = np.zeros((4*n, 1))
 
 
-        for i in range(n):
-            j = (i + 1) % n
 
-            l_i = i + 2*n + 1
-            r_i = i + 3*n + 1
-            l_j = j + 2*n + 1
-            r_j = j + 3*n + 1
-            
-            face_in = [l_i, l_j, r_i]
-            face_out = [r_i, l_j, r_j]
+            verticies = np.hstack((joined_verticies, z))
 
-            faces.append(face_in)
-            faces.append(face_out)
+            #* Faces data
+            faces = []
+            for i in range(n):
+                j = (i + 1) % n
+
+                l_i = i + 1
+                r_i = i + n + 1
+                l_j = j + 1
+                r_j = j + n + 1
+
+                face_in = [l_i, l_j, r_i]
+                face_out = [r_i, l_j, r_j]
+
+                faces.append(face_in)
+                faces.append(face_out)
+
+
+            for i in range(n):
+                j = (i + 1) % n
+
+                l_i = i + 2*n + 1
+                r_i = i + 3*n + 1
+                l_j = j + 2*n + 1
+                r_j = j + 3*n + 1
+                
+                face_in = [l_i, l_j, r_i]
+                face_out = [r_i, l_j, r_j]
+
+                faces.append(face_in)
+                faces.append(face_out)
 
     name_obj = filename + '.obj'
     output_dir = "trackData/"
@@ -251,11 +252,14 @@ def export_obj(mesh_points, filename, in_out):
         with open(output_path, 'w') as f:
             #* Header info
             f.write("# Generated by Track Mesh Generator\n")
-            if in_out == "in":
-                f.write("o track_mesh\n")
-            else:
-                f.write("o runoff_mesh\n")
 
+            match in_out:
+                case "in":
+                    f.write("o track_mesh\n")
+
+                case "out":
+                    f.write("o runoff_mesh\n")
+                    
             for v in verticies:
                 f.write(f"v {v[0]:.4f} {v[1]:.4f} {v[2]:.4f}\n")
             

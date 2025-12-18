@@ -3,6 +3,7 @@ This code is made for move car.
 Expected to use in main.py
 """
 
+import numpy as np
 import pybullet as p
 
 
@@ -39,3 +40,16 @@ def isContact(car_id, track_id, runoff_id, wheel_link_id):
         wheel_contact.append(surface)
     
     return wheel_contact
+
+
+def getDistance(car_id):
+    ray_origitn_local = [1.2, 0.0, 0.3]
+    ray_length = 10.0
+
+    ray_dir_local = [1, 0, 0]
+
+    pos, orn = p.getBasePositionAndOrientation(car_id)
+    rot_mat = p.getMatrixFromQuaternion(orn)
+    rot_mat = np.array(rot_mat).reshape(3, 3)
+    
+    # origin_world = pos + rot_mat @ np.array(ray_origin_local)

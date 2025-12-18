@@ -38,6 +38,7 @@ def main(engine_mode):
 
     p.setAdditionalSearchPath(pd.getDataPath())
     p.resetSimulation()
+    p.setTimeStep(1. / 240.)
     p.setGravity(0, 0, -9.81)
 
     #*===================== load models ===================
