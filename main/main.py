@@ -1,11 +1,10 @@
 import sys
 import time
 
+import car_functions as cf
 import numpy as np
 import pybullet as p
 import pybullet_data as pd
-
-import car_functions as cf
 import trackMaker.track_info_generator as pg
 
 
@@ -29,10 +28,13 @@ def main(engine_mode):
     pg.export_obj(runoff_mesh_points, runoff_name, in_out="out")
 
     #*=========== PuBullet basic settings ===============
-    if engine_mode == "gui":
-        engine = p.connect(p.GUI)
-    else:
-        engine = p.connect(p.DIRECT)
+    match engine_mode:
+        case "gui":
+            engine = p.connect(p.GUI)
+        case "direct":
+            engine = p.connect(p.DIRECT)
+        case _:
+            engine = p.connect(p.GUI)
 
     p.setAdditionalSearchPath(pd.getDataPath())
     p.resetSimulation()
@@ -116,10 +118,9 @@ def main(engine_mode):
 
     except Exception as e:
         print(e)
-
-    # シミュレーションの終了
-    p.disconnect()
-    print("PyBulletシミュレーションを終了しました。")
+         # シミュレーションの終了
+        p.disconnect()
+        print("PyBulletシミュレーションを終了しました。")
 
     #*====================== Debug ========================
     
