@@ -143,12 +143,16 @@ def export_obj(mesh_points, filename, in_out):
     if in_out != "in" and in_out != "out":
         raise ValueError("in_out must be 'in' or 'out'.")
 
-    if in_out == "in":
-        if mesh_points.ndim != 2 or mesh_points.shape[1] != 6:
-            raise ValueError("The shape of mesh_points must be (N, 6).")
-    else:
-        if mesh_points.ndim != 2 or mesh_points.shape[1] != 8:
-            raise ValueError("The shape of mesh_points must be (N, 8).")
+
+    match in_out:
+        case "in":
+            if mesh_points.ndim != 2 or mesh_points.shape[1] != 6:
+                raise ValueError("The shape of mesh_points must be (N, 6).")
+            
+        case "out":
+            if mesh_points.ndim != 2 or mesh_points.shape[1] != 8:
+                raise ValueError("The shape of mesh_points must be (N, 8).")
+
     
     match in_out:
         case "in":
@@ -235,7 +239,7 @@ def export_obj(mesh_points, filename, in_out):
                 faces.append(face_out)
 
     name_obj = filename + '.obj'
-    output_dir = "trackData/"
+    output_dir = "circuitData/"
     output_path = output_dir + name_obj
 
     try:

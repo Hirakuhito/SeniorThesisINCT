@@ -1,10 +1,11 @@
 import sys
 import time
 
-import car_functions as cf
 import numpy as np
 import pybullet as p
 import pybullet_data as pd
+
+import car_functions as cf
 import trackMaker.track_info_generator as pg
 
 
@@ -12,7 +13,7 @@ def main(engine_mode):
     print("# Welcome")
 
     #*================= export circuit ==================
-    circuit_name = "circuit"
+    track_name = "track"
     runoff_name = "runoff"
 
     straight = 7
@@ -21,10 +22,10 @@ def main(engine_mode):
 
     points = pg.gen_center_point(straight, radius)
 
-    circuit_mesh_points, cricuite_tangent_vector = pg.gen_mesh_data(points, width, radius, in_out="in")
-    pg.export_obj(circuit_mesh_points, circuit_name, in_out="in")
+    track_mesh_points, track_tangent_vector = pg.gen_mesh_data(points, width, radius, in_out="in")
+    pg.export_obj(track_mesh_points, track_name, in_out="in")
     
-    runoff_mesh_points, cricuite_tangent_vector = pg.gen_mesh_data(points, width, radius, in_out="out")
+    runoff_mesh_points, _ = pg.gen_mesh_data(points, width, radius, in_out="out")
     pg.export_obj(runoff_mesh_points, runoff_name, in_out="out")
 
     #*=========== PuBullet basic settings ===============
@@ -43,31 +44,31 @@ def main(engine_mode):
 
     #*===================== load models ===================
     #* load circuit
-    circuit_file_path = "trackData/" + circuit_name + ".obj"
-    runoff_file_path = "trackData/" + runoff_name + ".obj"
+    track_file_path = "circuitData/" + track_name + ".obj"
+    runoff_file_path = "circuitData/" + runoff_name + ".obj"
 
     base_pos = [0, 0, 0]
     base_orient = p.getQuaternionFromEuler([0, 0, 0])
 
-    circuit_vis_id = p.createVisualShape(
+    track_vis_id = p.createVisualShape(
         shapeType=p.GEOM_MESH,
-        fileName=circuit_file_path,
+        fileName=track_file_path,
         meshScale=[1.0, 1.0, 1.0],
         rgbaColor=[0.5, 0.5, 0.5, 1],
         specularColor=[0, 0, 0]
     )
 
-    circuit_coll_id = p.createCollisionShape(
+    track_coll_id = p.createCollisionShape(
         shapeType=p.GEOM_MESH,
-        fileName=circuit_file_path,
+        fileName=track_file_path,
         flags=p.GEOM_FORCE_CONCAVE_TRIMESH,
         meshScale=[1.0, 1.0, 1.0]
     )
     
-    circuit_id = p.createMultiBody(
+    track_id = p.createMultiBody(
         baseMass=0,
-        baseCollisionShapeIndex=circuit_coll_id,
-        baseVisualShapeIndex=circuit_vis_id,
+        baseCollisionShapeIndex=track_coll_id,
+        baseVisualShapeIndex=track_vis_id,
         basePosition=base_pos,
         baseOrientation=base_orient
     )
@@ -109,12 +110,17 @@ def main(engine_mode):
         p.changeVisualShape(car_id, wheel, specularColor=[0, 0, 0])
         p.changeDynamics(car_id, wheel, lateralFriction=1.0, rollingFriction=0.1)
 
+    #* Dictionary of models
+    name_to_id = {"car":car_id, "track":track_id, "runoff":runoff_id}
+    id_to_name = {car_id:"car", track_id:"track", runoff_id:"runoff"}
 
     #*===================== simulate =====================
     try:
         while p.isConnected():
             p.stepSimulation()
-            print(cf.isContact(car_id, circuit_id, runoff_id, wheel_index))
+            # print(cf.isContact(car_id, track_id, runoff_id, wheel_index))
+            hit_info = cf.checkHit(car_id)
+            print(f"Hit Info : Is Hit -> {hit_info[0]}, Hit to {hit_info[1]}, Distance {hit_info[2]}")
             time.sleep(1./240.)
 
     except Exception as e:

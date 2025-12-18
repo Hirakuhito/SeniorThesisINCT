@@ -42,14 +42,35 @@ def isContact(car_id, track_id, runoff_id, wheel_link_id):
     return wheel_contact
 
 
-def getDistance(car_id):
-    ray_origitn_local = [1.2, 0.0, 0.3]
-    ray_length = 10.0
+def checkHit(car_id, show=False, dict=None):
+    ray_origin_local = [1.2, 0.0, 0.3]
+    ray_length = 10
 
-    ray_dir_local = [1, 0, 0]
+    ray_dir_local = [1, 0, -0.5]
 
     pos, orn = p.getBasePositionAndOrientation(car_id)
     rot_mat = p.getMatrixFromQuaternion(orn)
     rot_mat = np.array(rot_mat).reshape(3, 3)
     
-    # origin_world = pos + rot_mat @ np.array(ray_origin_local)
+    origin_world = pos + rot_mat @ np.array(ray_origin_local)
+    dir_world = rot_mat @ np.array(ray_dir_local)
+    end_world = origin_world + dir_world * ray_length
+
+    hit_result = p.rayTest(origin_world.tolist(), end_world.tolist())[0]
+
+    isHit = hit_result[0] != -1
+    hit_id = hit_result[0]
+    hit_frac = hit_result[2]
+    distance = hit_frac * ray_length
+
+    hit_info = [isHit, hit_id, distance]
+
+    match show:
+        case True:
+            #* check dict -> search name from id -> print
+            pass
+
+        case False:
+            pass
+
+    return hit_info
