@@ -1,3 +1,4 @@
+import sys
 import time
 
 import numpy as np
@@ -6,7 +7,7 @@ import pybullet_data as pd
 import trackMaker.track_info_generator as pg
 
 
-def main():
+def main(engine_mode):
     print("# Welcome")
 
     #*================= export circuit ==================
@@ -14,7 +15,7 @@ def main():
     runoff_name = "runoff"
 
     straight = 0
-    radius = 40
+    radius = 10
     width = 15
 
     points = pg.gen_center_point(straight, radius)
@@ -26,7 +27,11 @@ def main():
     pg.export_obj(runoff_mesh_points, runoff_name, in_out="out")
 
     #*=========== PuBullet basic settings ===============
-    engine = p.connect(p.GUI)
+    if engine_mode == "gui":
+        engine = p.connect(p.GUI)
+    else:
+        engine = p.connect(p.DIRECT)
+
     p.setAdditionalSearchPath(pd.getDataPath())
     p.resetSimulation()
     p.setGravity(0, 0, -9.81)
@@ -116,4 +121,12 @@ def main():
 
     
 if __name__ == "__main__":
-    main()
+    arg = sys.argv
+
+    if not isinstance(arg[1], str):
+        raise ValueError("CommandLine argument must be string.")
+
+    if arg[1] != "gui" and arg[1] != "direct":
+        raise ValueError("Engin mode must choose gui or direct.")
+
+    main(engine_mode=arg[1])
