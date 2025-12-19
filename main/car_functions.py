@@ -82,7 +82,6 @@ def checkHit(car_id, show=False, dict=None):
 
     match show:
         case True:
-            #* check dict -> search name from id -> print
             if dict == None:
                 raise ValueError("If you wanna show the information, you should attach dictionary.")
 
