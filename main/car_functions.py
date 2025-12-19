@@ -16,7 +16,6 @@ def isContact(car_id, track_id, runoff_id, wheel_link_id):
 
     Return:
         flag (list) : True or False were stored list
-
     """
 
     wheel_contact = []
