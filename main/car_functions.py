@@ -45,7 +45,7 @@ def isContact(car_id, track_id, runoff_id, wheel_link_id):
 def checkHit(car_id, show=False, dict=None):
     ray_origin_local = [0.0, 0.5, 0.0]
     # ray_dir_local = [0, 1, -0.1]
-    ray_length = 1.5
+    ray_length = 3
     ray_num = 11
     fov = np.deg2rad(120)
 
@@ -66,7 +66,7 @@ def checkHit(car_id, show=False, dict=None):
     hit_info = []
     for a in angles:
         ca, sa = np.cos(a), np.sin(a)
-        dir_local = np.array([sa, ca, -0.08])
+        dir_local = np.array([sa, ca, -0.03])
 
         dir_world    = rot_z @ np.array(dir_local)
         end_world    = origin_world + dir_world * ray_length

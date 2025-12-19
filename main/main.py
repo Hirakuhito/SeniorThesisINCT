@@ -1,11 +1,10 @@
 import sys
 import time
 
+import car_functions as cf
 import numpy as np
 import pybullet as p
 import pybullet_data as pd
-
-import car_functions as cf
 import trackMaker.track_info_generator as pg
 
 
