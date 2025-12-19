@@ -1,7 +1,0 @@
-.
-└── SeniorThesisINCT
-    └── main
-        ├── formular
-        ├── trackMaker
-        │   └── point_info_gen.py
-        └── main.py
