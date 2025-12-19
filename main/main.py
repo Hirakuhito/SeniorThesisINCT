@@ -117,8 +117,7 @@ def main(engine_mode):
     try:
         while p.isConnected():
             p.stepSimulation()
-            # print(cf.isContact(car_id, track_id, runoff_id, wheel_index))
-            hit_info = cf.checkHit(car_id, show=True, dict=id_to_name)
+            hit_info = cf.checkHit(car_id, f_or_b='f', show=False, dict=id_to_name)
             # print(f"Hit Info : Is Hit -> {hit_info[0]}, Hit to {hit_info[1]}, Distance {hit_info[2]}")
             time.sleep(1./240.)
 

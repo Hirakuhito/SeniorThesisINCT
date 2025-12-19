@@ -42,7 +42,8 @@ def isContact(car_id, track_id, runoff_id, wheel_link_id):
 
 
 def checkHit(car_id, show=False, dict=None):
-    ray_origin_local = [0.0, 0.5, 0.0]
+    ray_origin_local_front = [0.0, 0.5, 0.0]
+    ray_origin_local_back = [0.0, -0.3, 0.0]
     # ray_dir_local = [0, 1, -0.1]
     ray_length = 3
     ray_num = 11
@@ -51,31 +52,33 @@ def checkHit(car_id, show=False, dict=None):
     pos, orn = p.getBasePositionAndOrientation(car_id)
     yaw = p.getEulerFromQuaternion(orn)[2]
 
-    cy, sy = np.cos(yaw), np.sin(yaw)
-    rot_z = np.array([
-        [cy, -sy, 0],
-        [sy,  cy, 0],
+    cyf, syf = np.cos(yaw), np.sin(yaw)
+    rot_zf = np.array([
+        [cyf, -syf, 0],
+        [syf,  cyf, 0],
         [ 0,   0, 1]
     ])
 
-    origin_world = pos + rot_z @ np.array(ray_origin_local)
+    #todo I wanna make back ray sensor but I have no idea to do how...
 
-    angles = np.linspace(-fov/2, fov/2, ray_num)
+    origin_world_front = pos + rot_zf @ np.array(ray_origin_local_front)
+
+    angles_f = np.linspace(-fov/2, fov/2, ray_num)
 
     hit_info = []
-    for a in angles:
+    for a in angles_f:
         ca, sa = np.cos(a), np.sin(a)
         dir_local = np.array([sa, ca, -0.03])
 
-        dir_world    = rot_z @ np.array(dir_local)
-        end_world    = origin_world + dir_world * ray_length
+        dir_world    = rot_zf @ np.array(dir_local)
+        end_world    = origin_world_front + dir_world * ray_length
 
-        p.addUserDebugLine(origin_world, end_world, [1,0,0], 1, 0.1)
-        results = p.rayTest(origin_world.tolist(), end_world.tolist())[0]
+        # p.addUserDebugLine(origin_world, end_world, [1,0,0], 1, 0.1)
+        results_f = p.rayTest(origin_world_front.tolist(), end_world.tolist())[0]
 
 
-        isHit = results[0] != -1
-        hit_id = results[0]
+        isHit = results_f[0] != -1
+        hit_id = results_f[0]
 
         hit_info.append([isHit, hit_id])
 
