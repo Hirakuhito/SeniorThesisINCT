@@ -9,26 +9,34 @@ class Car:
         # sensor config
         self.sensor_front = {
             "origin": np.array([0.0, 0.5, 0.0]),
-            "direction": np.array([0.0, 1.0, -0.05]),
-            "length": 5.0
+            "base_direction": np.array([0.0, 1.0, -0.05]),
+            "length": 2.5,
+            "fov": np.deg2rad(120),
+            "num_rays":7
         }
 
         self.sensor_right = {
             "origin": np.array([0.2, 0.0, 0.0]),
-            "direction": np.array([0.5, 0.0, -0.1]),
-            "length": 2.0
+            "base_direction": np.array([0.5, 0.0, -0.1]),
+            "length": 1.5,
+            "fov": np.deg2rad(60),
+            "num_rays":3
         }
 
         self.sensor_left = {
             "origin": np.array([-0.2, 0.0, 0.0]),
-            "direction": np.array([-0.5, 0.0, -0.1]),
-            "length": 2.0
+            "base_direction": np.array([-0.5, 0.0, -0.1]),
+            "length": 1.5,
+            "fov": np.deg2rad(60),
+            "num_rays":3
         }
 
         self.sensor_back = {
-            "origin": np.array([0.0, -0.3, 0.0]),
-            "direction": np.array([0.0, -1.0, -0.05]),
-            "length": 3.0
+            "origin": np.array([0.0, -0.4, 0.0]),
+            "base_direction": np.array([0.0, -1.0, -0.1]),
+            "length": 1.5,
+            "fov": np.deg2rad(120),
+            "num_rays":5
         }
 
         self.sensors = [
@@ -38,39 +46,81 @@ class Car:
             self.sensor_back,
         ]
 
-    def local2world(self, pos, orn, sensor):
+    def gen_world_direction(self, base_dir, fov, num):
+        angles = np.linspace(-fov/2, fov/2, num)
+        base_dir = base_dir / np.linalg.norm(base_dir)
+
+        dirs = []
+        for a in angles:
+            rot = np.array([
+                [ np.cos(a), -np.sin(a), 0 ],
+                [ np.sin(a),  np.cos(a), 0 ],
+                [     0,        0,       0 ],
+            ])
+            dirs.append(rot @ base_dir)
+
+        return dirs
+
+    def local2world(self):
+        pos, orn = p.getBasePositionAndOrientation(self.car_id)
         rot = np.array(p.getMatrixFromQuaternion(orn)).reshape(3, 3)
 
-        origin_world = np.array(pos) + rot @ sensor["origin"]
-        dir_world = rot @ sensor["direction"]
-        end_world = origin_world + dir_world * sensor["length"]
+        all_rays = []
 
-        return origin_world.tolist(), end_world.tolist()
+        for sensor in self.sensors:
+            rays = []
+
+            dirs_local = self.gen_world_direction(
+                sensor["base_direction"],
+                sensor["fov"],
+                sensor["num_rays"]
+            )
+
+            origin_world = np.array(pos) + rot @ sensor["origin"]
+
+            for d in dirs_local:
+                dir_world = rot @ d
+                end_world = origin_world + dir_world * sensor["length"]
+
+                rays.append((origin_world.tolist(), end_world.tolist()))
+            
+            all_rays.append(rays)
+
+        return all_rays
     
     def checkHit(self):
-        pos, orn = p.getBasePositionAndOrientation(self.car_id)
+        all_rays = self.local2world()
 
         starts = []
         ends = []
+        ray_map = []
 
-        for vec in self.sensors:
-            s, e = self.local2world(pos, orn, vec)
-            starts.append(s)
-            ends.append(e)
+
+        for sensor_index, rays in enumerate(all_rays):
+            for ray_index, (s, e) in enumerate(rays):
+                # p.addUserDebugLine(s, e, [1, 0, 0], 4, 0.1)
+                starts.append(s)
+                ends.append(e)
+                ray_map.append((sensor_index, ray_index))
             
-        for s, e in zip(starts, ends):
-            p.addUserDebugLine(s, e, [1, 0, 0])
+        
+        results = p.rayTestBatch(starts, ends)
 
-        result = p.rayTestBatch(starts, ends)
+        hit_data = [
+            [] for _ in range(len(all_rays))
+        ]
 
-        hit_front = result[0][2] * self.sensor_front["length"]
-        hit_left = result[1][2] * self.sensor_left["length"]
-        hit_right = result[2][2] * self.sensor_right["length"]
-        hit_back = result[3][2] * self.sensor_back["length"]
+        for (sensor_index, _), hit in zip(ray_map, results):
+            hit_object_uid = hit[0]
+            hit_fraction = hit[2]
+            hit_position = hit[3]
 
-        hit = [hit_front, hit_left, hit_right, hit_back]
+            if hit_object_uid < 0:
+                hit_data[sensor_index].append(1.0)
+            else:
+                hit_data[sensor_index].append(hit_fraction)
 
-        return hit
+        return hit_data
     
     # def isContact(car_id, track_id, runoff_id, wheel_link_id):
     #     """
