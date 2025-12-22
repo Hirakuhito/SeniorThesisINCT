@@ -1,11 +1,12 @@
 import sys
 import time
 
-import car_functions as cf
 import numpy as np
 import pybullet as p
 import pybullet_data as pd
+
 import trackMaker.track_info_generator as pg
+from car import Car
 
 
 def main(engine_mode):
@@ -103,6 +104,8 @@ def main(engine_mode):
 
     car_id = p.loadURDF(car_path, basePosition=car_base_pos, baseOrientation=car_base_orient, globalScaling=0.2)
 
+    car = Car(car_id)
+
     #* load plane
     wheel_index = [1, 3, 5, 7]
     for _, wheel in enumerate(wheel_index):
@@ -117,7 +120,7 @@ def main(engine_mode):
     try:
         while p.isConnected():
             p.stepSimulation()
-            hit_info = cf.checkHit(car_id, f_or_b='f', show=False, dict=id_to_name)
+            hit_info = car.checkHit()
             # print(f"Hit Info : Is Hit -> {hit_info[0]}, Hit to {hit_info[1]}, Distance {hit_info[2]}")
             time.sleep(1./240.)
 
