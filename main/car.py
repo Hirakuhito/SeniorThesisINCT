@@ -46,6 +46,7 @@ class Car:
             self.sensor_back,
         ]
 
+
     def gen_world_direction(self, base_dir, fov, num):
         angles = np.linspace(-fov/2, fov/2, num)
         base_dir = base_dir / np.linalg.norm(base_dir)
@@ -121,3 +122,12 @@ class Car:
                 hit_data[sensor_index].append(hit_fraction)
 
         return hit_data
+    
+    def reset(self):
+        # initialize, sensor hist and flag
+        pass
+
+
+    def apply_action(self, steer, throttle):
+        #joint control
+        pass

@@ -3,6 +3,7 @@ import numpy as np
 import pybullet as p
 import pybullet_data as pd
 from gymnasium import spaces
+from stable_baselines3.common.env_checker import check_env
 
 import trackMaker.track_info_generator as pg
 from car import Car
@@ -12,11 +13,7 @@ class RacingEnv(gym.Env):
     def __init__(self, gui=False):
         super().__init__()
 
-        if gui:
-            self.engine_id = p.connect(p.GUI)
-        else:
-            self.engine_id = p.connect(p.DIRECT)
-
+        self.engine_id = p.connect(p.GUI if gui else p.DIRECT)
         p.setAdditionalSearchPath(pd.getDataPath())
         p.setTimeStep(1. / 240.)
         p.setGravity(0, 0, -9.81)
@@ -35,20 +32,24 @@ class RacingEnv(gym.Env):
             dtype=np.float32
         )
 
-        self.car_id = None
+        self._build_world()
+        self.car = Car(self.car_id)
+
+        self.start_pos = [self.radius, 0, 0.2]
+        self.start_orn = p.getQuaternionFromEuler([0, 0, 0])
 
 
     def _build_world(self):
-        straight = 7
-        radius = 3
-        width = 2
+        self.straight = 7
+        self.radius = 3
+        self.width = 2
 
-        points = pg.gen_center_point(straight, radius)
+        points = pg.gen_center_point(self.straight, self.radius)
 
-        track_mesh_points, _ = pg.gen_mesh_data(points, width, radius, in_out="in")
+        track_mesh_points, _ = pg.gen_mesh_data(points, self.width, self.radius, in_out="in")
         pg.export_obj(track_mesh_points, "track", in_out="in")
 
-        runoff_mesh_points, _ = pg.gen_mesh_data(points, width, radius, in_out="out")
+        runoff_mesh_points, _ = pg.gen_mesh_data(points, self.width, self.radius, in_out="out")
         pg.export_obj(runoff_mesh_points, "runoff", in_out="out")
 
         #*===================== load models ===================
@@ -110,7 +111,7 @@ class RacingEnv(gym.Env):
 
         #* load car
         car_path = "./formular/formular_car/car.urdf"
-        car_base_pos = [radius, 0, 0.2]
+        car_base_pos = [self.radius, 0, 0.2]
         car_base_orient = p.getQuaternionFromEuler([0, 0, 0])
 
         self.car_id = p.loadURDF(car_path, basePosition=car_base_pos, baseOrientation=car_base_orient, globalScaling=0.2)
@@ -125,16 +126,22 @@ class RacingEnv(gym.Env):
 
         return np.array(obs, dtype=np.float32)
 
-    def reset(self, seed=None, options=None):
+    def reset(self, *,  seed=None, options=None):
         super().reset(seed=seed)
 
-        p.setGravity(0, 0, -9.81)
+        p.resetBasePositionAndOrientation(
+            self.car_id,
+            self.start_pos,
+            self.start_orn
+        )
+        p.resetBaseVelocity(self.car_id, [0, 0, 0], [0, 0, 0])
 
-        self.car = Car(self.car_id)
+        self.car.reset()
 
         obs = self._get_obs()
-        
-        return obs, {}
+        info = {}
+
+        return obs, info
     
     def step(self, action):
         steer, throttle = action
@@ -152,8 +159,9 @@ class RacingEnv(gym.Env):
         
 
 env = RacingEnv(gui=True)
-env._build_world()
 obs, _ = env.reset()
+
+check_env(env, warn=True)
 
 for _ in range(100):
     action = env.action_space.sample()
