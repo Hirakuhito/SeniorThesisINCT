@@ -15,7 +15,7 @@ class RacingEnv(gym.Env):
 
         self.engine_id = p.connect(p.GUI if gui else p.DIRECT)
         p.setAdditionalSearchPath(pd.getDataPath())
-        p.setTimeStep(1. / 240.)
+        p.setTimeStep(1. / 60.)
         p.setGravity(0, 0, -9.81)
 
         obs_dim = 18
@@ -117,6 +117,22 @@ class RacingEnv(gym.Env):
         self.car_id = p.loadURDF(car_path, basePosition=car_base_pos, baseOrientation=car_base_orient, globalScaling=0.2)
 
 
+    def _calc_reward(self):
+        pos, orn = p.getBasePositionAndOrientation(self.car_id)
+
+        rot = p.getMatrixFromQuaternion(orn)
+        forward = np.array([rot[0], rot[3], rot[6]])
+
+        vel, _ = p.getBaseVelocity(self.car_id)
+        vel = np.array(vel)
+
+        forward_speed = np.dot(forward, vel)
+
+        reward = forward_speed * 0.5
+
+        return reward
+
+
     def _get_obs(self):
         hit_data = self.car.checkHit()
 
@@ -125,6 +141,15 @@ class RacingEnv(gym.Env):
             obs.extend(sensor)
 
         return np.array(obs, dtype=np.float32)
+    
+
+    def _is_terminated(self):
+        pos, _ = p.getBasePositionAndOrientation(self.car_id)
+
+        if pos[2] < 0.1:
+            return True
+        
+        return False
 
     def reset(self, *,  seed=None, options=None):
         super().reset(seed=seed)
@@ -145,15 +170,16 @@ class RacingEnv(gym.Env):
     
     def step(self, action):
         steer, throttle = action
-        for _ in range(5):
+        self.car.apply_action(steer, throttle)
+
+        for _ in range(2):
             p.stepSimulation()
 
         obs = self._get_obs()
+        reward = self._calc_reward()
 
-        terminated = False
+        terminated = self._is_terminated()
         truncated = False
-
-        reward = 0.0
 
         return obs, reward, terminated, truncated, {}
         

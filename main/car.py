@@ -5,7 +5,21 @@ import pybullet as p
 class Car:
     def __init__(self, car_id):
         self.car_id = car_id
-    
+
+        self.steer_joints = []
+        self.drive_joints = []
+
+        for i in range(p.getNumJoints(car_id)):
+            info = p.getJointInfo(car_id, i)
+            name = info[1].decode("utf-8")
+
+            if "steer" in name:
+                self.steer_joints.append(i)
+            if "wheel" in name:
+                self.drive_joints.append(i)
+
+            
+
         # sensor config
         self.sensor_front = {
             "origin": np.array([0.0, 0.5, 0.0]),
@@ -122,6 +136,29 @@ class Car:
                 hit_data[sensor_index].append(hit_fraction)
 
         return hit_data
+    
+
+    def apply_action(self, steer, throttle):
+        max_steer = 0.5
+        max_force = 20.0
+
+        for j in self.steer_joints:
+            p.setJointMotorControl2(
+                self.car_id,
+                j,
+                p.POSITION_CONTROL,
+                targetPosition=steer * max_steer,
+                force=50
+            )
+        
+        for j in self.drive_joints:
+            p.setJointMotorControl2(
+                self.car_id,
+                j,
+                p.VELOCITY_CONTROL,
+                targetVelocity=throttle * 20.0,
+                force=max_force
+            )
     
     def reset(self):
         # initialize, sensor hist and flag
