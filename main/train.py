@@ -15,7 +15,7 @@ model = PPO(
 
     n_steps=2048,
     batch_size=64,
-    n_epochs=10,
+    n_epochs=100,
 
     gamma=0.99,
     gae_lambda=0.95,
@@ -30,5 +30,5 @@ model = PPO(
     verbose=1,
 )
 
-model.learn(total_timesteps=1_000)
+model.learn(total_timesteps=20_000)
 model.save("ppr_racing")
