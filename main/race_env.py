@@ -2,11 +2,10 @@ import gymnasium as gym
 import numpy as np
 import pybullet as p
 import pybullet_data as pd
-from gymnasium import spaces
-from stable_baselines3.common.env_checker import check_env
-
 import trackMaker.track_info_generator as pg
 from car import Car
+from gymnasium import spaces
+from stable_baselines3.common.env_checker import check_env
 
 
 class RacingEnv(gym.Env):
@@ -184,7 +183,7 @@ class RacingEnv(gym.Env):
         return obs, reward, terminated, truncated, {}
         
 
-env = RacingEnv(gui=True)
+env = RacingEnv(gui=False)
 obs, _ = env.reset()
 
 check_env(env, warn=True)
