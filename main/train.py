@@ -31,4 +31,4 @@ model = PPO(
 )
 
 model.learn(total_timesteps=20_000)
-model.save("ppr_racing")
+model.save("ppo_racing")
